@@ -8,13 +8,14 @@ Dự án bao gồm:
 
 1.  **Phiên bản Tuần tự (Sequential):** Một chương trình C đơn luồng thực hiện tích chập làm cơ sở so sánh và kiểm tra tính đúng đắn.
 2.  **Phiên bản Song song (Parallel):** Một chương trình C sử dụng MPI để phân tán công việc tính toán tích chập trên nhiều tiến trình (processes), nhằm giảm thời gian thực thi tổng thể.
-
+3.  **Phiên bản Song song mở rộng (MPI + OpenMP):** (Mới thêm) Một phiên bản kết hợp MPI và OpenMP (`mpi_omp_convolution.c`) nhằm khai thác song song cấp tiến trình và cấp luồng, tối ưu hiệu suất trên các hệ thống đa lõi .
 ## Bài toán
 
 Tích chập ảnh yêu cầu áp dụng một kernel (ma trận nhỏ) lên từng pixel của ảnh đầu vào. Để tính giá trị của một pixel đầu ra, cần truy cập giá trị của pixel đó và các pixel lân cận trong ảnh đầu vào. Với ảnh lớn hoặc khi áp dụng bộ lọc nhiều lần (ví dụ: tăng độ mờ), khối lượng tính toán và truy cập bộ nhớ trở nên rất lớn, khiến phiên bản tuần tự chạy chậm và trở thành nút cổ chai (bottleneck).
 
 ## Chiến lược Song song hóa
 
+Phiên bản sử dụng MPI (và mở rộng kết hợp OpenMP) sử dụng các kỹ thuật sau:
 Để giải quyết vấn đề hiệu năng, phiên bản song song sử dụng các kỹ thuật sau:
 
 1.  **Mô hình Lập trình:** **SPMD (Single Program, Multiple Data)** - Tất cả các tiến trình MPI chạy cùng một mã nguồn nhưng hoạt động trên các phần dữ liệu khác nhau.
@@ -27,9 +28,11 @@ Tích chập ảnh yêu cầu áp dụng một kernel (ma trận nhỏ) lên t�
     *   **Input:** Sử dụng **MPI I/O** (`MPI_File_open`, `MPI_File_seek`, `MPI_File_read`). Mỗi tiến trình tính toán vị trí (offset) và đọc trực tiếp phần dữ liệu ảnh tương ứng với khối của mình từ file raw đầu vào vào bộ đệm cục bộ.
     *   **Output:** Sử dụng **MPI I/O** (`MPI_File_open`, `MPI_File_seek`, `MPI_File_write`). Sau khi hoàn thành tính toán, mỗi tiến trình ghi phần kết quả của mình (bỏ qua padding/halo) vào đúng vị trí trong file ảnh raw đầu ra chung. *(Lưu ý: Cách tiếp cận khác có thể là dùng MPI_Gatherv để thu thập về tiến trình 0 rồi P0 ghi file, nhưng code hiện tại dùng parallel write).*
 
+**Phiên bản Song song mở rộng (MPI + OpenMP):** (Mới thêm) Một phiên bản kết hợp MPI và OpenMP (`mpi_omp_convolution.c`) nhằm khai thác song song cấp tiến trình và cấp luồng, tối ưu hiệu suất trên các hệ thống đa lõi .
 ## Cấu trúc Code
 
 *   `sequential_convolution.c` (hoặc tên tương tự): Mã nguồn phiên bản tuần tự.
 *   `mpi_convolution.c` (hoặc tên tương tự bạn đặt, ví dụ code bạn cung cấp gần nhất): Mã nguồn phiên bản song song sử dụng MPI.
+*   `mpi_omp_convolution.c`: **(Mới)** Phiên bản kết hợp MPI + OpenMP.
 *   `stb_image_write.h`: Thư viện header-only của Sean Barrett để ghi file ảnh PNG (cần tải về và đặt cùng thư mục mã nguồn).
 
